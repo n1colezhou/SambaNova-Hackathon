@@ -1,20 +1,69 @@
-import React, { useEffect } from 'react';
+// src/App.js
+import React, { useState } from 'react';
+import './App.css';
 
 function App() {
+  const [isActive, setIsActive] = useState(false);
+  const [extractedText, setExtractedText] = useState('');
+  const [status, setStatus] = useState('Inactive');
+  const [loading, setLoading] = useState(false);
 
-  let text = 'Click Here';
-  const returnText = () => {
-    text = document.body.innerText;
-    // console.log(document.body.innerText);
+  const handleButtonClick = () => {
+    setIsActive(!isActive);
+    setLoading(true);
+
+    // Show processing state
+    const buttonText = isActive ? 'Activating...' : 'Processing...';
+
+    // Inject content script to grab text from the active tab
+    window.chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      window.chrome.scripting.executeScript(
+        {
+          target: { tabId: tabs[0].id },
+          function: extractPageText
+        },
+        (results) => {
+          if (chrome.runtime.lastError) {
+            alert('Error extracting text: ' + chrome.runtime.lastError.message);
+            setLoading(false);
+            return;
+          }
+          const pageText = results[0].result.trim();
+          setExtractedText(pageText);
+
+          // Update status and button text
+          setTimeout(() => {
+            setStatus(isActive ? 'Inactive' : 'Active');
+            setIsActive(!isActive);
+            setLoading(false);
+          }, 1000);
+        }
+      );
+    });
+  };
+
+  // Content script function to extract all text from the page
+  function extractPageText() {
+    return document.body.innerText;  // Extracts all visible text
   }
 
-  // useEffect(() => {
-  //   returnText();
-  // }, []);
-
   return (
-    <div>
-        <button onClick={returnText}>Hi {text}</button>
+    <div className="App">
+      <button
+        id="mainButton"
+        onClick={handleButtonClick}
+        disabled={loading}
+        className={loading ? 'disabled' : ''}
+      >
+        {loading ? <span className="spinner"></span> : (isActive ? 'Deactivate' : 'Activate')}
+      </button>
+      <p>Status: <span className={isActive ? 'active' : 'inactive'}>{status}</span></p>
+      <textarea
+        id="textOutput"
+        value={extractedText}
+        readOnly
+        placeholder="Extracted text will appear here..."
+      />
     </div>
   );
 }
