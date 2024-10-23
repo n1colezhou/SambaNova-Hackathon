@@ -79,6 +79,16 @@
                 </div>
             </button>
 
+            <!-- Log Text Button -->
+            <button class="btn btn-secondary w-100 py-2 mb-3" id="logTextButton">
+                <div class="d-flex align-items-center justify-content-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-list-ul me-2" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm-3 1a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm0 4a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                    </svg>
+                    Log Visible Text
+                </div>
+            </button>
+
             <!-- Settings Panel -->
             <div class="settings-panel" id="settingsPanel">
                 <div class="card">
@@ -120,12 +130,47 @@
             const buttonText = document.getElementById('buttonText');
             const settingsPanel = document.getElementById('settingsPanel');
             const settingsToggle = document.getElementById('settingsToggle');
+            const logTextButton = document.getElementById('logTextButton');
             let isActive = false;
 
             // Initialize tooltips
             const tooltips = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             tooltips.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Function to get all visible text
+            function getVisibleText() {
+                console.log("button has been pressed")
+                const walker = document.createTreeWalker(
+                    document.body,
+                    NodeFilter.SHOW_TEXT,
+                    {
+                        acceptNode: function(node) {
+                            // Check if the text node's parent element is visible
+                            const style = window.getComputedStyle(node.parentElement);
+                            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+                                return NodeFilter.FILTER_REJECT;
+                            }
+                            // Only accept non-empty text nodes
+                            return node.textContent.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                        }
+                    }
+                );
+
+                const textNodes = [];
+                let node;
+                while (node = walker.nextNode()) {
+                    textNodes.push(node.textContent.trim());
+                }
+                return textNodes;
+            }
+
+            // Add click handler for log text button
+            logTextButton.addEventListener('click', function() {
+                const visibleText = getVisibleText();
+                console.log('Visible text on the page:');
+                console.log(visibleText);
             });
 
             mainButton.addEventListener('click', function() {
