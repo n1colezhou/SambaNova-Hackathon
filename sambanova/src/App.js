@@ -1,6 +1,7 @@
 // src/App.js
 import React, { useState } from 'react';
 import './App.css';
+import { generateChatCompletion } from './api/chatCompletions';
 
 function App() {
   const [isActive, setIsActive] = useState(false);
@@ -22,7 +23,7 @@ function App() {
           target: { tabId: tabs[0].id },
           function: extractPageText
         },
-        (results) => {
+        async (results) => {
           if (chrome.runtime.lastError) {
             alert('Error extracting text: ' + chrome.runtime.lastError.message);
             setLoading(false);
@@ -30,6 +31,18 @@ function App() {
           }
           const pageText = results[0].result.trim();
           setExtractedText(pageText);
+
+          const messages = [
+            { role: "user", content: pageText } // User's extracted text
+          ]
+
+          try {
+            console.log("API Sent");
+            const apiResponse = await generateChatCompletion(messages);
+            console.log(apiResponse);
+          } catch (error) {
+            console.error('Error generating chat completion:', error);
+          }
 
           // Update status and button text
           setTimeout(() => {
