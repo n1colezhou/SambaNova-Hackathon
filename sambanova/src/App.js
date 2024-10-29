@@ -1,4 +1,3 @@
-// src/App.js
 import React, { useState } from 'react';
 import './App.css';
 import { generateChatCompletion } from './api/chatCompletions';
@@ -39,7 +38,7 @@ function App() {
           try {
             console.log("API Sent");
             const apiResponse = await generateChatCompletion(messages);
-            console.log(apiResponse);
+            console.log(apiResponse.choices[0].message.content);
           } catch (error) {
             console.error('Error generating chat completion:', error);
           }
