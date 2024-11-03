@@ -1,6 +1,156 @@
 import React, { useState } from 'react';
-import { Calendar, NotebookPen, Edit2, Check, X } from 'lucide-react';
+import { Calendar, NotebookPen, Edit2, Check, X, Loader2, AlertCircle } from 'lucide-react';
+import { CONFIG } from '../config';
 
+const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fadeIn p-4">
+      <div 
+        className="bg-white rounded-lg border border-gray-200 shadow-[0_0_15px_rgba(0,0,0,0.1)] max-w-md w-full animate-slideUp"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="p-6 space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const extractPageId = (notionUrl) => {
+  const matches = notionUrl.match(/([a-zA-Z0-9]{32})/);
+  return matches ? matches[1] : null;
+};
+
+const createNotionCalendar = async (pageId, events, title) => {
+  try {
+    const database = await fetch('https://api.notion.com/v1/databases', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${CONFIG.NOTION_API_KEY}`,
+        'Notion-Version': CONFIG.NOTION_API_VERSION,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        parent: {
+          type: "page_id",
+          page_id: pageId,
+        },
+        icon: {
+          type: "emoji",
+          emoji: "📅"
+        },
+        title: [
+          {
+            type: "text",
+            text: {
+              content: title,
+              link: null
+            }
+          }
+        ],
+        properties: {
+          Event: {
+            title: {}
+          },
+          Date: {
+            type: "date",
+            date: {}
+          },
+          Details: {
+            type: "rich_text",
+            rich_text: {}
+          }
+        },
+        is_inline: true
+      })
+    });
+
+    if (!database.ok) {
+      const error = await database.json();
+      throw new Error(error.message || 'Failed to create calendar database');
+    }
+
+    const dbData = await database.json();
+    const validEvents = [];
+    
+    for (const dayEvent of events) {
+      if (!isValidISODate(dayEvent.date)) continue;
+
+      for (const event of dayEvent.events) {
+        if (!event.description?.trim()) continue;
+
+        validEvents.push({
+          parent: { 
+            type: "database_id",
+            database_id: dbData.id 
+          },
+          properties: {
+            Event: {
+              title: [
+                {
+                  text: {
+                    content: event.description
+                  }
+                }
+              ]
+            },
+            Date: {
+              date: {
+                start: dayEvent.date
+              }
+            },
+            Details: {
+              rich_text: [
+                {
+                  type: "text",
+                  text: {
+                    content: event.details || ''
+                  }
+                }
+              ]
+            }
+          }
+        });
+      }
+    }
+
+    // Create events in batches of 100
+    const batchSize = 100;
+    for (let i = 0; i < validEvents.length; i += batchSize) {
+      const batch = validEvents.slice(i, i + batchSize);
+      
+      // Create pages in parallel for better performance
+      await Promise.all(batch.map(pageData => 
+        fetch('https://api.notion.com/v1/pages', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${CONFIG.NOTION_API_KEY}`,
+            'Notion-Version': CONFIG.NOTION_API_VERSION,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(pageData)
+        })
+      ));
+    }
+
+    return dbData;
+  } catch (error) {
+    console.error('Notion API Error:', error);
+    throw error;
+  }
+};
+
+const isValidISODate = (dateString) => {
+  if (!dateString) return false;
+
+  const date = new Date(dateString);
+
+  return date instanceof Date && !isNaN(date) && dateString.match(/^\d{4}-\d{2}-\d{2}/);
+};
 const EventCard = ({ dayEvents, onUpdate }) => {
   const safeEvents = dayEvents.events?.map(event => ({
     description: event?.description || '',
@@ -99,8 +249,12 @@ const EventCard = ({ dayEvents, onUpdate }) => {
   );
 };
 
-const EventSchedule = ({ events = [], onUpdateEvents, onExport }) => {
-  // Ensure events is an array and each event has required structure
+const EventSchedule = ({ events = [], onUpdateEvents, onExport, notionUrl }) => {
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportError, setExportError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [title, setTitle] = useState('Course Schedule');
+  
   const validEvents = Array.isArray(events) ? events.map(event => ({
     date: event.date || 'No date',
     events: Array.isArray(event.events) ? event.events : []
@@ -111,6 +265,40 @@ const EventSchedule = ({ events = [], onUpdateEvents, onExport }) => {
       dayEvents.date === updatedDayEvents.date ? updatedDayEvents : dayEvents
     );
     onUpdateEvents(newEvents);
+  };
+
+  const handleExportClick = () => {
+    setShowModal(true);
+  };
+
+  const handleExport = async () => {
+    setIsExporting(true);
+    setExportError(null);
+
+    try {
+      if (!CONFIG.NOTION_API_KEY) {
+        throw new Error('Missing Notion API key in environment variables');
+      }
+
+      if (!title.trim()) {
+        throw new Error('Please enter a title for your calendar');
+      }
+
+      const pageId = extractPageId(notionUrl);
+      if (!pageId) {
+        throw new Error('Invalid Notion URL format');
+      }
+
+      await createNotionCalendar(pageId, validEvents, title);
+      setShowModal(false);
+      onExport();
+      
+    } catch (error) {
+      console.error('Export failed:', error);
+      setExportError(error.message);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -143,12 +331,21 @@ const EventSchedule = ({ events = [], onUpdateEvents, onExport }) => {
         </div>
       </div>
 
+      {exportError && (
+        <div className="mx-4 mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+          <div className="flex gap-2 items-start">
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+            <p className="text-sm text-red-700">{exportError}</p>
+          </div>
+        </div>
+      )}
+
       <div className="mt-auto px-4 pb-4 bg-white">
         <button 
-          onClick={onExport}
+          onClick={handleExportClick}
           disabled={validEvents.length === 0}
           className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transform hover:scale-[1.02] transition-all
-            ${validEvents.length === 0 
+            ${validEvents.length === 0
               ? 'bg-gray-400 cursor-not-allowed' 
               : 'bg-blue-500 hover:bg-blue-600 text-white'
             }`}
@@ -157,6 +354,60 @@ const EventSchedule = ({ events = [], onUpdateEvents, onExport }) => {
           <NotebookPen className="w-4 h-4" />
         </button>
       </div>
+
+      <Modal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)}
+        title="Export to Notion"
+      >
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <label className="text-sm text-gray-700 block">Calendar Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter calendar title"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isExporting}
+            />
+          </div>
+
+          {exportError && (
+            <div className="text-sm text-red-600">
+              {exportError}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-4">
+            <button
+              onClick={() => setShowModal(false)}
+              disabled={isExporting}
+              className="flex-1 py-2 px-4 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleExport}
+              disabled={isExporting || !title.trim()}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+                ${isExporting || !title.trim()
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-blue-500 hover:bg-blue-600'
+                }`}
+            >
+              {isExporting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Exporting...
+                </>
+              ) : (
+                'Confirm'
+              )}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

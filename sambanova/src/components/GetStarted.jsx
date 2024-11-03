@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 
 const GetStarted = ({ onGetStarted }) => (
-  <div className="animate-fadeIn flex flex-col items-center justify-center h-full text-center px-6 space-y-8">
+  <div className="animate-fadeIn flex flex-col items-center justify-center h-full text-center px-4 space-y-8">
     <h1 className="text-xl font-bold text-gray-800">
       Sync
     </h1>
