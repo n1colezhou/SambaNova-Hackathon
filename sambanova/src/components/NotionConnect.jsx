@@ -39,6 +39,7 @@ const NotionConnect = ({ initialUrl = '', onSuccess }) => {
     }
   };
   
+  
   const handleButtonClick = () => {
     setLoading(true);
     setError(null);
@@ -137,23 +138,28 @@ const NotionConnect = ({ initialUrl = '', onSuccess }) => {
       <button
         onClick={handleButtonClick}
         disabled={!isUrlValid || loading}
-        className={`flex items-center justify-center gap-2 py-3 px-4 rounded-md text-white text-sm font-medium1
+        className={`group w-full relative rounded-xl transition-all duration-200
           ${!isUrlValid || loading 
             ? 'bg-gray-400 cursor-not-allowed' 
-            : 'bg-blue-500 hover:bg-blue-600 transform hover:scale-[1.02] transition-all'
+            : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:shadow-lg'
           }`}
       >
-        {loading ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Extracting Events...
-          </>
-        ) : (
-          <>
-            Get Events
-            <ArrowRight className="w-4 h-4" />
-          </>
-        )}
+        <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl blur opacity-60 group-hover:opacity-100 transition duration-200" />
+        <div className="relative flex items-center justify-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm font-medium text-gray-900 group-hover:text-white transition-all duration-200">
+          {loading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Extracting Events...
+            </>
+          ) : (
+            <>
+              Get Events
+              <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
+                <ArrowRight className="w-2.5 h-2.5 text-white" />
+              </div>
+            </>
+          )}
+        </div>
       </button>
 
       <div className="mt-3 p-4 bg-blue-50 rounded-md animate-fadeIn">

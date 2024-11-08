@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, NotebookPen, Loader2, AlertCircle } from 'lucide-react';
-import { CONFIG } from '../config';
+import { Calendar, NotebookPen, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { createNotionCalendar, extractPageId } from '../notionUtils';
 import Modal from './Modal';
 import EventCard from './EventCard';
@@ -28,10 +27,6 @@ const EventSchedule = ({ events = [], onUpdateEvents, onExport, notionUrl }) => 
     setExportError(null);
 
     try {
-      if (!CONFIG.NOTION_API_KEY) {
-        throw new Error('Missing Notion API key in environment variables');
-      }
-
       if (!title.trim()) {
         throw new Error('Please enter a title for your calendar');
       }
@@ -45,7 +40,7 @@ const EventSchedule = ({ events = [], onUpdateEvents, onExport, notionUrl }) => 
       setShowModal(false);
       onExport();
       
-    } catch (error) {
+    } catch (error) { 
       console.error('Export failed:', error);
       setExportError(error.message);
     } finally {
@@ -92,18 +87,21 @@ const EventSchedule = ({ events = [], onUpdateEvents, onExport, notionUrl }) => 
         </div>
       )}
 
-      <div className="mt-auto px-4 pb-4 bg-white">
+      <div className="mt-auto px-4 pb-4">
         <button 
           onClick={() => setShowModal(true)}
           disabled={validEvents.length === 0}
-          className={`w-full flex items-center justify-center gap-2 py-3 px-4 rounded-md text-sm font-medium transform hover:scale-[1.02] transition-all
+          className={`group w-full relative rounded-xl transition-all duration-200
             ${validEvents.length === 0
               ? 'bg-gray-400 cursor-not-allowed' 
-              : 'bg-blue-500 hover:bg-blue-600 text-white'
+              : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:shadow-lg'
             }`}
         >
-          Export to Notion
-          <NotebookPen className="w-4 h-4" />
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl blur opacity-60 group-hover:opacity-100 transition duration-200" />
+          <div className="relative flex items-center justify-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm font-medium text-gray-900 group-hover:text-white transition-all duration-200">
+            Export to Notion
+            <NotebookPen className="w-4 h-4" />
+          </div>
         </button>
       </div>
 
@@ -143,7 +141,7 @@ const EventSchedule = ({ events = [], onUpdateEvents, onExport, notionUrl }) => 
               className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-md text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
                 ${isExporting || !title.trim()
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-blue-500 hover:bg-blue-600'
+                  : 'bg-gradient-to-r from-blue-500 to-indigo-500 hover:bg-blue-600'
                 }`}
             >
               {isExporting ? (

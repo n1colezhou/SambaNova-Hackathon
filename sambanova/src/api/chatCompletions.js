@@ -10,7 +10,7 @@ export const generateChatCompletion = async (messages) => {
             model: "Meta-Llama-3.1-8B-Instruct",
             messages: messages
         });
-        // console.log("API Response:", response.data);
+        console.log("API Response:", response.data);
         return response.data;
     } catch (error) {
         throw new Error(`Error: ${error.message}`);
