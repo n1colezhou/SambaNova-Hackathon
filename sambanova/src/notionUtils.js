@@ -158,9 +158,9 @@ export function retrieveAndExchangeToken() {
         }
 
         const data = await response.json();
-        const accessToken = data.access_token; // Extracts only the access_token
+        const accessToken = data.access_token;
         console.log("Access Token:", accessToken);
-        resolve(accessToken); // Return only the access token
+        resolve(accessToken);
       } catch (error) {
         console.error("Error exchanging code for token:", error);
         reject(error);
@@ -174,6 +174,7 @@ export const createNotionCalendar = async (pageId, events, title) => {
   try {
     // Retrieve the access token
     const accessToken = await retrieveAndExchangeToken();
+    console.log(accessToken)
     
     // Create the database using the access token
     const dbData = await createDatabase(pageId, title, accessToken);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, Calendar, NotebookPen, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import GetStarted from './components/GetStarted';
 import NotionConnect from './components/NotionConnect';
 import EventSchedule from './components/EventSchedule';
@@ -18,12 +18,17 @@ const App = () => {
   useEffect(() => {
     const retrieveToken = async () => {
       try {
-        const token = await retrieveAndExchangeToken();
-        if (token) {
-          handlePageTransition(0);
-        } else {
-          handlePageTransition(-1);
-        }
+        chrome.storage.local.get('integrationCode', async (result) => {
+          const token = result.integrationCode;
+          console.log(token)
+
+          if (token) {
+            handlePageTransition(0);
+          } else {
+              handlePageTransition(-1);
+            }
+          
+        });
       } catch (error) {
         console.error('Error retrieving token:', error);
         handlePageTransition(-1);
@@ -39,26 +44,41 @@ const App = () => {
   };
 
   const handleBack = () => {
-    if (step === 0 && localStorage.getItem('notion_token')) {
-      localStorage.removeItem('notion_token');
+    if (step === 0 && localStorage.getItem('integrationCode')) {
+      chrome.storage.local.remove('integrationCode');
     }
     handlePageTransition(Math.max(-1, step - 1));
   };
 
   const handleNotionConnect = async () => {
     try {
-      const token = await retrieveAndExchangeToken();
-      if (token) {
-        localStorage.setItem('notion_token', token);
-        handlePageTransition(0);
-      } else {
-        handlePageTransition(-1);
-      }
+      const authorizationUrl = 'https://api.notion.com/v1/oauth/authorize?client_id=YOUR_CLIENT_ID&response_type=code&redirect_uri=YOUR_REDIRECT_URI';
+      window.location.href = authorizationUrl;
     } catch (error) {
       console.error('Error connecting to Notion:', error);
       handlePageTransition(-1);
     }
   };
+  
+  const exchangeAuthorizationCode = async (authorizationCode) => {
+    try {
+      const token = await retrieveAndExchangeToken(authorizationCode);
+      if (token) {
+        chrome.storage.local.set({ integrationCode: token });
+        handlePageTransition(0);
+      } else {
+        handlePageTransition(-1);
+      }
+    } catch (error) {
+      console.error('Error exchanging authorization code:', error);
+      handlePageTransition(-1);
+    }
+  };
+  
+  const authorizationCode = new URLSearchParams(window.location.search).get('code');
+  if (authorizationCode) {
+    exchangeAuthorizationCode(authorizationCode);
+  }
 
   const handlePromptSelect = (promptType) => {
     if (promptType === 'prompt1') {
