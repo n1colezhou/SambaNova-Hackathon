@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "My React Chrome Extension",
+  "name": "SYNC Chrome Extension",
   "version": "1.0",
-  "description": "A Chrome extension built with React.",
-  "permissions": ["activeTab", "scripting", "storage", "contextMenus", "https://api.notion.com/*"], 
+  "description": "A Chrome extension built to automatically parse out important events and automatically export to Notion.",
+  "permissions": ["tabs", "activeTab", "scripting", "storage", "contextMenus", "https://api.notion.com/*"], 
   "action": {
     "default_popup": "index.html",
     "default_icon": {

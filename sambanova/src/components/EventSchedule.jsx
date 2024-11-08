@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Calendar, NotebookPen, Loader2, AlertCircle } from 'lucide-react';
-import { CONFIG } from '../config';
 import { createNotionCalendar, extractPageId } from '../notionUtils';
 import Modal from './Modal';
 import EventCard from './EventCard';
@@ -24,13 +23,11 @@ const EventSchedule = ({ events = [], onUpdateEvents, onExport, notionUrl }) => 
   };
 
   const handleExport = async () => {
+   
     setIsExporting(true);
     setExportError(null);
-
+    
     try {
-      if (!CONFIG.NOTION_API_KEY) {
-        throw new Error('Missing Notion API key in environment variables');
-      }
 
       if (!title.trim()) {
         throw new Error('Please enter a title for your calendar');

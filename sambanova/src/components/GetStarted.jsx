@@ -11,7 +11,7 @@ const GetStarted = ({ onGetStarted }) => (
     <h1 className="text-xl font-bold text-gray-800">
       Sync
     </h1>
-    
+    <a href="https://api.notion.com/v1/oauth/authorize?client_id=136d872b-594c-8013-b929-003746f7e5f7&response_type=code&owner=user&redirect_uri=https%3A%2F%2Fsync-redirectpage.netlify.app%2F" target="_blank">Integration Link</a>
     <div className="space-y-6">
       <div className="flex items-start gap-3 text-left animate-slideUp delay-100">
         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
