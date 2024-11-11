@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+
 import { Calendar, NotebookPen, Loader2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { createNotionCalendar, extractPageId } from '../notionUtils';
 import Modal from './Modal';
@@ -23,9 +24,10 @@ const EventSchedule = ({ events = [], onUpdateEvents, onExport, notionUrl }) => 
   };
 
   const handleExport = async () => {
+   
     setIsExporting(true);
     setExportError(null);
-
+    
     try {
       if (!title.trim()) {
         throw new Error('Please enter a title for your calendar');
