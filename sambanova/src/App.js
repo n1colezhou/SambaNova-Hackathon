@@ -1,24 +1,41 @@
-import React, { useState } from 'react';
-import { Link, Calendar, NotebookPen, ArrowLeft, Sun, Moon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import GetStarted from './components/GetStarted';
 import NotionConnect from './components/NotionConnect';
 import EventSchedule from './components/EventSchedule';
 import Success from './components/Success';
+import SelectPromptOptions from './components/SelectPromptOptions';
+import Login from './components/Login';
+import { retrieveAndExchangeToken } from './notionUtils';
 
 const App = () => {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(-1);
   const [notionUrl, setNotionUrl] = useState('');
   const [events, setEvents] = useState([]);
   const [isDark, setIsDark] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  const handleExportToNotion = () => {
-    handlePageTransition(3);
-  };
+  useEffect(() => {
+    const retrieveToken = async () => {
+      try {
+        chrome.storage.local.get('integrationCode', async (result) => {
+          const token = result.integrationCode;
+          console.log(token)
 
-  const handleBack = () => {
-    handlePageTransition(Math.max(0, step - 1));
-  };
+          if (token) {
+            handlePageTransition(0);
+          } else {
+              handlePageTransition(-1);
+            }
+          
+        });
+      } catch (error) {
+        console.error('Error retrieving token:', error);
+        handlePageTransition(-1);
+      }
+    };
+    retrieveToken();
+  }, []);
 
   const handlePageTransition = (newStep) => {
     setIsAnimating(true);
@@ -26,14 +43,57 @@ const App = () => {
     setTimeout(() => setIsAnimating(false), 100);
   };
 
-  const handleNotionConnect = (url, fetchedEvents) => {
-    setNotionUrl(url);
-    setEvents(fetchedEvents);
-    handlePageTransition(2);
+  const handleBack = () => {
+    if (step === 0 && localStorage.getItem('integrationCode')) {
+      chrome.storage.local.remove('integrationCode');
+    }
+    handlePageTransition(Math.max(-1, step - 1));
   };
 
-  const toggleTheme = () => {
-    setIsDark(prev => !prev);
+  const handleNotionConnect = async () => {
+    try {
+      const authorizationUrl = 'https://api.notion.com/v1/oauth/authorize?client_id=YOUR_CLIENT_ID&response_type=code&redirect_uri=YOUR_REDIRECT_URI';
+      window.location.href = authorizationUrl;
+    } catch (error) {
+      console.error('Error connecting to Notion:', error);
+      handlePageTransition(-1);
+    }
+  };
+  
+  const exchangeAuthorizationCode = async (authorizationCode) => {
+    try {
+      const token = await retrieveAndExchangeToken(authorizationCode);
+      if (token) {
+        chrome.storage.local.set({ integrationCode: token });
+        handlePageTransition(0);
+      } else {
+        handlePageTransition(-1);
+      }
+    } catch (error) {
+      console.error('Error exchanging authorization code:', error);
+      handlePageTransition(-1);
+    }
+  };
+  
+  const authorizationCode = new URLSearchParams(window.location.search).get('code');
+  if (authorizationCode) {
+    exchangeAuthorizationCode(authorizationCode);
+  }
+
+  const handlePromptSelect = (promptType) => {
+    if (promptType === 'prompt1') {
+      handlePageTransition(1);
+    }
+  };
+
+  const handleEventSuccess = (url, fetchedEvents) => {
+    setNotionUrl(url);
+    setEvents(fetchedEvents);
+    handlePageTransition(3);
+  };
+
+  const handleExportToNotion = () => {
+    handlePageTransition(4);
   };
 
   const pageClasses = `
@@ -48,7 +108,7 @@ const App = () => {
     >
       <div className="h-full flex flex-col">
         <div className="flex items-center justify-between mb-4">
-          {step > 0 ? (
+          {step > -1 && (
             <button 
               onClick={handleBack}
               className={`p-2 rounded-lg transition-colors
@@ -59,66 +119,45 @@ const App = () => {
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-          ) : (
-            <div className="w-9 h-9" />
           )}
         </div>
 
-        {/* Progress Indicator */}
-        <div className="flex items-center justify-between mb-6 px-2 animate-fadeIn">
-          <div className={`flex flex-col items-center ${
-            step >= 1 
-              ? 'text-blue-500' 
-              : isDark ? 'text-gray-500' : 'text-gray-400'
-          }`}>
-            <Link className="w-5 h-5" />
-            <span className="text-xs mt-1">Connect</span>
+        {step > 0 && (
+          <div className="flex items-center justify-between mb-6 px-2 animate-fadeIn">
           </div>
-          <div className={`h-px w-12 transition-colors duration-500 ${
-            step >= 2 
-              ? 'bg-blue-500' 
-              : isDark ? 'bg-gray-700' : 'bg-gray-300'
-          }`} />
-          <div className={`flex flex-col items-center ${
-            step >= 2 
-              ? 'text-blue-500' 
-              : isDark ? 'text-gray-500' : 'text-gray-400'
-          }`}>
-            <Calendar className="w-5 h-5" />
-            <span className="text-xs mt-1">Events</span>
-          </div>
-          <div className={`h-px w-12 transition-colors duration-500 ${
-            step >= 3 
-              ? 'bg-blue-500' 
-              : isDark ? 'bg-gray-700' : 'bg-gray-300'
-          }`} />
-          <div className={`flex flex-col items-center ${
-            step >= 3 
-              ? 'text-blue-500' 
-              : isDark ? 'text-gray-500' : 'text-gray-400'
-          }`}>
-            <NotebookPen className="w-5 h-5" />
-            <span className="text-xs mt-1">Export</span>
-          </div>
-        </div>
+        )}
 
         <div className="flex-1 relative">
           <div key={step} className={pageClasses}>
-            {step === 0 && (
-              <GetStarted 
-                onGetStarted={() => handlePageTransition(1)} 
-                isDark={isDark} 
+            {step === -1 && (
+              <Login
+                onNotionConnect={handleNotionConnect}
+                isDark={isDark}
               />
             )}
-            
-            {step === 1 && (
-              <NotionConnect
-                onSuccess={handleNotionConnect}
+
+            {step === 0 && (
+              <SelectPromptOptions 
+                onSelect={handlePromptSelect} 
                 isDark={isDark}
               />
             )}
             
+            {step === 1 && (
+              <GetStarted 
+                onGetStarted={() => handlePageTransition(2)} 
+                isDark={isDark} 
+              />
+            )}
+            
             {step === 2 && (
+              <NotionConnect
+                onSuccess={handleEventSuccess}
+                isDark={isDark}
+              />
+            )}
+            
+            {step === 3 && (
               <EventSchedule
                 events={events}
                 notionUrl={notionUrl}
@@ -128,8 +167,11 @@ const App = () => {
               />
             )}
             
-            {step === 3 && (
-              <Success notionUrl={notionUrl} isDark={isDark} />
+            {step === 4 && (
+              <Success 
+                notionUrl={notionUrl} 
+                isDark={isDark}
+              />
             )}
           </div>
         </div>
