@@ -1,52 +1,43 @@
-'use client'
-
-import { useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Code, LayoutDashboard, Dumbbell, FolderKanban, Plus } from 'lucide-react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Code, LayoutDashboard, Dumbbell, FolderKanban, Plus } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Collection {
-  id: string
-  name: string
-  type: 'course' | 'project' | 'workout' | 'custom'
-  active: boolean
-  icon: any
+  id: string;
+  name: string;
+  type: 'course' | 'project' | 'workout' | 'custom';
+  active: boolean;
+  icon: any;
 }
 
-export function Sidebar() {
-  const [collections, setCollections] = useState<Collection[]>([
-    { id: '1', name: 'Full Stack Development', type: 'course', active: true, icon: Code },
-    { id: '2', name: 'UI/UX Design', type: 'course', active: false, icon: LayoutDashboard },
-    { id: '3', name: 'Workout Plan', type: 'workout', active: false, icon: Dumbbell },
-    { id: '4', name: 'App Launch', type: 'project', active: false, icon: FolderKanban },
-  ])
+interface SidebarProps {
+  collections: Collection[];
+  onAddCollection: (collection: Collection) => void;
+  onSelectCollection: (id: string) => void;
+}
 
+export function Sidebar({ collections, onAddCollection, onSelectCollection }: SidebarProps) {
   const [newCollection, setNewCollection] = useState({
     name: '',
     type: 'course' as const,
-  })
+  });
 
   const getIconForType = (type: string) => {
     switch (type) {
       case 'course':
-        return Code
+        return Code;
       case 'project':
-        return FolderKanban
+        return FolderKanban;
       case 'workout':
-        return Dumbbell
+        return Dumbbell;
       default:
-        return LayoutDashboard
+        return LayoutDashboard;
     }
-  }
+  };
 
   const handleAddCollection = () => {
     if (newCollection.name.trim()) {
@@ -56,21 +47,14 @@ export function Sidebar() {
         type: newCollection.type,
         active: false,
         icon: getIconForType(newCollection.type),
-      }
-      setCollections(prev => [...prev, collection])
-      setNewCollection({ name: '', type: 'course' })
+      };
+      onAddCollection(collection);
+      setNewCollection({ name: '', type: 'course' });
     }
-  }
-
-  const handleSelectCollection = (id: string) => {
-    setCollections(prev => prev.map(collection => ({
-      ...collection,
-      active: collection.id === id,
-    })))
-  }
+  };
 
   return (
-    <div className="w-64 fixed inset-y-0 left-0 bg-card border-r">
+    <div className="w-64 h-full fixed inset-y-0 left-0 bg-card border-r">
       <div className="p-4">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
@@ -81,20 +65,20 @@ export function Sidebar() {
 
         <div className="space-y-2">
           {collections.map((collection) => {
-            const CollectionIcon = collection.icon
+            const CollectionIcon = collection.icon;
             return (
               <Button
                 key={collection.id}
                 variant={collection.active ? "secondary" : "ghost"}
                 className="w-full justify-start"
-                onClick={() => handleSelectCollection(collection.id)}
+                onClick={() => onSelectCollection(collection.id)}
               >
                 <CollectionIcon className="mr-2 h-4 w-4" />
                 {collection.name}
               </Button>
-            )
+            );
           })}
-          
+
           <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" className="w-full justify-start">
@@ -143,5 +127,5 @@ export function Sidebar() {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};

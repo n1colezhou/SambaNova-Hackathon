@@ -3,12 +3,12 @@ export type PlanType = 'course' | 'project' | 'workout' | 'custom'
 export interface TimelineItem {
   id: string
   title: string
-  date?: string // Optional as some items might not have dates
+  date?: string 
   status: 'not-started' | 'in-progress' | 'completed' | 'blocked'
-  type: string // Flexible type (e.g., 'assignment', 'deliverable', 'exercise', etc.)
+  type: string 
   description?: string
   priority?: 'low' | 'medium' | 'high'
-  dependencies?: string[] // IDs of items this depends on
+  dependencies?: string[] 
 }
 
 export interface TimeBlock {
@@ -25,6 +25,7 @@ export interface Plan {
   type: PlanType
   description: string
   timeBlocks: TimeBlock[]
-  overview: string // Rich text overview/notes
-  rawData?: any // Original scraped/imported data
+  overview: string 
+  rawData?: any 
 }
+

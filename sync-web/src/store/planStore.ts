@@ -41,7 +41,7 @@ export const usePlanStore = create<PlanState>()(
             },
           }
         }),
-
+        
       updateItem: (blockId, itemId, updates) =>
         set((state) => {
           if (!state.currentPlan) return state
