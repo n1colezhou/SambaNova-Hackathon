@@ -25,7 +25,7 @@ export function Editor({ apiResponse, onSave }: EditorProps) {
     editorProps: {
       attributes: {
         class:
-          'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-lg p-4 focus:outline-none min-h-[300px] rounded-md shadow-md border border-gray-300 dark:border-gray-600'
+          'prose dark:prose-invert prose-sm sm:prose-base lg:prose-lg xl:prose-lg p-4 focus:outline-none min-h-[300px] rounded-md shadow-md w-full max-w-none'
       }
     },
     onUpdate: debounce(({ editor }) => {
@@ -45,7 +45,7 @@ export function Editor({ apiResponse, onSave }: EditorProps) {
   }
 
   return (
-    <div className="mb-8 mt-8">
+    <div className="mb-8 mt">
       {/* <div className="border-b p-2 flex gap-2 sticky top-0 bg-background rounded-t-md">
         <Button
           variant="ghost"
