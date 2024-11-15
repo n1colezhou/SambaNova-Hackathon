@@ -227,34 +227,26 @@ export default function Dashboard() {
                 />
               </div>
             </div>
-    
             <div className="w-full">
-              <h1 className="text-2xl font-bold mb-6">Review Your Plan</h1>
-              <div className="w-full border border-gray-300 rounded-lg p-6 bg-white shadow-md">
-                <div className="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-6">
-                  <div className="w-full md:w-1/2">
-                    <Editor
-                      apiResponse={overview}
-                      onSave={handleUpdateOverview}
-                    />
-                  </div>
-                  <div className="w-full md:w-2/3">
-                    <TaskList
-                      blocks={blocks}
-                      onUpdateItem={(updatedItem) => {
-                        setBlocks((prevBlocks) =>
-                          prevBlocks.map((block) => ({
-                            ...block,
-                            items: block.items.map((item) => 
-                              item.id === updatedItem.id ? updatedItem : item
-                            ),
-                          }))
-                        );
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
+              <Editor
+                apiResponse={overview}
+                onSave={handleUpdateOverview}
+              />
+            </div>
+            <div className="w-full mb-10">
+              <TaskList
+                blocks={blocks}
+                onUpdateItem={(updatedItem) => {
+                  setBlocks((prevBlocks) =>
+                    prevBlocks.map((block) => ({
+                      ...block,
+                      items: block.items.map((item) => 
+                        item.id === updatedItem.id ? updatedItem : item
+                      ),
+                    }))
+                  );
+                }}
+              />
             </div>
           </div>
         </div>

@@ -45,8 +45,8 @@ export function Editor({ apiResponse, onSave }: EditorProps) {
   }
 
   return (
-    <div className="mb-8">
-      <div className="border-b p-2 flex gap-2 sticky top-0 bg-background rounded-t-md">
+    <div className="mb-8 mt-8">
+      {/* <div className="border-b p-2 flex gap-2 sticky top-0 bg-background rounded-t-md">
         <Button
           variant="ghost"
           size="sm"
@@ -95,11 +95,9 @@ export function Editor({ apiResponse, onSave }: EditorProps) {
         >
           <ListOrdered className="h-4 w-4" />
         </Button>
-      </div>
+      </div> */}
 
-      <div className="scale-90">
         <EditorContent editor={editor} />
-      </div>
     </div>
   )
 }
