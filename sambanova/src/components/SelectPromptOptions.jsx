@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Brain, Sparkles, ArrowRight } from 'lucide-react';
 
+// This is a reusable component for each prompt option
 const PromptOption = ({ icon: Icon, title, description, onClick, disabled, isSelected }) => (
   <button
     onClick={onClick}
@@ -20,19 +21,14 @@ const PromptOption = ({ icon: Icon, title, description, onClick, disabled, isSel
           : isSelected 
             ? 'bg-gradient-to-r from-blue-400 to-indigo-400' 
             : 'bg-gradient-to-r from-blue-100 to-indigo-100 group-hover:from-blue-200 group-hover:to-indigo-200'}`}>
-        <Icon className={`w-3.5 h-3.5 ${
-          disabled ? 'text-gray-400' : 'text-white'
-        }`} />
+
+        <Icon className={`w-3.5 h-3.5 ${disabled ? 'text-gray-400' : 'text-white'}`} />
       </div>
       <div>
-        <h3 className={`font-medium text-sm ${
-          disabled ? 'text-gray-400' : 'text-gray-900'
-        }`}>
+        <h3 className={`font-medium text-sm ${disabled ? 'text-gray-400' : 'text-gray-900'}`}>
           {title}
         </h3>
-        <p className={`text-xs mt-0.5 ${
-          disabled ? 'text-gray-400' : 'text-gray-600'
-        }`}>
+        <p className={`text-xs mt-0.5 ${disabled ? 'text-gray-400' : 'text-gray-600'}`}>
           {description}
         </p>
       </div>
@@ -42,6 +38,16 @@ const PromptOption = ({ icon: Icon, title, description, onClick, disabled, isSel
 
 const SelectPromptOptions = ({ onSelect }) => {
   const [selectedPrompt, setSelectedPrompt] = useState(null);
+
+  const handleSelectPrompt = (promptKey) => {
+    setSelectedPrompt(promptKey);
+  };
+
+  const handleContinue = () => {
+    if (selectedPrompt) {
+      onSelect(selectedPrompt);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full animate-fadeIn pt-2">
@@ -64,7 +70,7 @@ const SelectPromptOptions = ({ onSelect }) => {
           icon={Calendar}
           title="Basic Schedule"
           description="Simple event extraction and study planning"
-          onClick={() => setSelectedPrompt('prompt1')}
+          onClick={() => handleSelectPrompt('prompt1')}  // Use specific prompt key
           isSelected={selectedPrompt === 'prompt1'}
         />
 
@@ -72,20 +78,22 @@ const SelectPromptOptions = ({ onSelect }) => {
           icon={Brain}
           title="Advanced Analysis"
           description="Comprehensive study strategy with AI insights"
-          onClick={() => setSelectedPrompt('prompt2')}
-          disabled
+          onClick={() => handleSelectPrompt('prompt2')}  // Use specific prompt key
+          disabled={false}
+          isSelected={selectedPrompt === 'prompt2'}
         />
 
         <PromptOption
           icon={Sparkles}
           title="Custom Learning"
           description="Personalized learning path optimization"
-          onClick={() => setSelectedPrompt('prompt3')}
-          disabled
+          onClick={() => handleSelectPrompt('prompt3')}  // Use specific prompt key
+          disabled={false}
+          isSelected={selectedPrompt === 'prompt3'}
         />
 
         <button
-          onClick={() => selectedPrompt && onSelect(selectedPrompt)}
+          onClick={handleContinue}  // When the user clicks continue, call the selected prompt
           disabled={!selectedPrompt}
           className="group w-full relative rounded-xl transition-all duration-200 mt-4"
         >
@@ -93,12 +101,11 @@ const SelectPromptOptions = ({ onSelect }) => {
             ${selectedPrompt 
               ? 'bg-gradient-to-r from-blue-500 to-indigo-500 group-hover:opacity-100' 
               : 'bg-gray-200 opacity-40'}`}
-          />
+/>
           <div className={`relative flex items-center justify-center gap-2 px-4 py-2.5 bg-white rounded-xl text-sm font-medium transition-all duration-200
             ${selectedPrompt 
               ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:shadow-lg' 
-              : 'bg-gray-100 text-gray-400'}`}
-          >
+              : 'bg-gray-100 text-gray-400'}`}>
             {selectedPrompt ? 'Continue' : 'Select a Study Mode'}
             <div className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center">
               <ArrowRight className="w-2.5 h-2.5 text-white" />

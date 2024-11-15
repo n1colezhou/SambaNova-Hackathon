@@ -11,7 +11,45 @@ export const isValidISODate = (dateString) => {
   return date instanceof Date && !isNaN(date) && dateString.match(/^\d{4}-\d{2}-\d{2}/);
 };
 
-const createDatabase = async (pageId, title, accessToken) => {
+const createDatabase = async (pageId, title, accessToken, includeSuggestions) => {
+  const properties = {
+    Event: {
+      title: {}
+    },
+    Date: {
+      type: "date",
+      date: {}
+    },
+    Details: {
+      type: "rich_text",
+      rich_text: {}
+    }
+  };
+
+  // Add suggestion-related properties if needed
+  if (includeSuggestions) {
+    properties.Task_Description = {
+      type: "rich_text",
+      rich_text: {}
+    };
+    properties.Time_Block = {
+      type: "rich_text",
+      rich_text: {}
+    };
+    properties.Start_Time = {
+      type: "date",
+      date: {}
+    };
+    properties.End_Time = {
+      type: "date",
+      date: {}
+    };
+    properties.Suggestion_Details = {
+      type: "rich_text",
+      rich_text: {}
+    };
+  }
+
   const response = await fetch('https://api.notion.com/v1/databases', {
     method: 'POST',
     headers: {
@@ -37,19 +75,7 @@ const createDatabase = async (pageId, title, accessToken) => {
           }
         }
       ],
-      properties: {
-        Event: {
-          title: {}
-        },
-        Date: {
-          type: "date",
-          date: {}
-        },
-        Details: {
-          type: "rich_text",
-          rich_text: {}
-        }
-      },
+      properties,
       is_inline: true
     })
   });
@@ -62,12 +88,8 @@ const createDatabase = async (pageId, title, accessToken) => {
   return response.json();
 };
 
-const createEventPage = (dbId, event, date) => ({
-  parent: {
-    type: "database_id",
-    database_id: dbId
-  },
-  properties: {
+const createEventPage = (dbId, event, date, includeSuggestions) => {
+  const properties = {
     Event: {
       title: [
         {
@@ -92,13 +114,92 @@ const createEventPage = (dbId, event, date) => ({
         }
       ]
     }
+  };
+
+  if (includeSuggestions) {
+    properties.Type = {
+      select: {
+        name: "Event"
+      }
+    };
+  }
+
+  return {
+    parent: {
+      type: "database_id",
+      database_id: dbId
+    },
+    properties
+  };
+};
+
+const createSuggestionPage = (dbId, suggestion, date) => ({
+  parent: {
+    type: "database_id",
+    database_id: dbId
+  },
+  properties: {
+    Event: {
+      title: [
+        {
+          text: {
+            content: "Suggestion"  // Default title for suggestions
+          }
+        }
+      ]
+    },
+    Date: {
+      date: {
+        start: date
+      }
+    },
+    Task_Description: {
+      rich_text: [
+        {
+          type: "text",
+          text: {
+            content: suggestion.task_description || ''
+          }
+        }
+      ]
+    },
+    Time_Block: {
+      rich_text: [
+        {
+          type: "text",
+          text: {
+            content: suggestion.time_block || ''
+          }
+        }
+      ]
+    },
+    Start_Time: {
+      date: {
+        start: suggestion.start_time || null
+      }
+    },
+    End_Time: {
+      date: {
+        start: suggestion.end_time || null
+      }
+    },
+    Suggestion_Details: {
+      rich_text: [
+        {
+          type: "text",
+          text: {
+            content: suggestion.details || ''
+          }
+        }
+      ]
+    }
   }
 });
 
-const createEventsInBatches = async (validEvents, accessToken) => {
+const createItemsInBatches = async (items, accessToken) => {
   const batchSize = 100;
-  for (let i = 0; i < validEvents.length; i += batchSize) {
-    const batch = validEvents.slice(i, i + batchSize);
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
     await Promise.all(batch.map(pageData =>
       fetch('https://api.notion.com/v1/pages', {
         method: 'POST',
@@ -137,7 +238,7 @@ export function retrieveAndExchangeToken() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Authorization": "Basic " + btoa(`${process.env.REACT_APP_NOTION_CLIENT_ID}:${process.env.REACT_APP_NOTION_CLIENT_SECRET}`) // Use env variables here
+            "Authorization": "Basic " + btoa(`${process.env.REACT_APP_NOTION_CLIENT_ID}:${process.env.REACT_APP_NOTION_CLIENT_SECRET}`)
           },
           body: JSON.stringify({
             grant_type: "authorization_code",
@@ -163,22 +264,31 @@ export function retrieveAndExchangeToken() {
   });
 }
 
-export const createNotionCalendar = async (pageId, events, title) => {
+export const createNotionCalendar = async (pageId, events, title, includeSuggestions = false) => {
   try {
     const accessToken = await retrieveAndExchangeToken();
-    const dbData = await createDatabase(pageId, title, accessToken);
-    const validEvents = [];
+    const dbData = await createDatabase(pageId, title, accessToken, includeSuggestions);
 
+    const items = [];
     for (const dayEvent of events) {
       if (!isValidISODate(dayEvent.date)) continue;
 
-      for (const event of dayEvent.events) {
-        if (!event.description?.trim()) continue;
-        validEvents.push(createEventPage(dbData.id, event, dayEvent.date));
+      if (dayEvent.events) {
+        for (const event of dayEvent.events) {
+          if (!event.description?.trim()) continue;
+          items.push(createEventPage(dbData.id, event, dayEvent.date, includeSuggestions));
+        }
+      }
+
+      if (includeSuggestions && dayEvent.suggestions) {
+        for (const suggestion of dayEvent.suggestions) {
+          if (!suggestion.description?.trim()) continue;
+          items.push(createSuggestionPage(dbData.id, suggestion, dayEvent.date));
+        }
       }
     }
 
-    await createEventsInBatches(validEvents, accessToken);
+    await createItemsInBatches(items, accessToken);
     return dbData;
   } catch (error) {
     console.error('Notion API Error:', error);

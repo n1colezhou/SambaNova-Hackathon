@@ -14,6 +14,7 @@ const App = () => {
   const [events, setEvents] = useState([]);
   const [isDark, setIsDark] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [selectedPrompt, setSelectedPrompt] = useState(null);
 
   useEffect(() => {
     const retrieveToken = async () => {
@@ -81,9 +82,8 @@ const App = () => {
   }
 
   const handlePromptSelect = (promptType) => {
-    if (promptType === 'prompt1') {
-      handlePageTransition(1);
-    }
+    setSelectedPrompt(promptType); // Store the selected prompt
+    handlePageTransition(1);
   };
 
   const handleEventSuccess = (url, fetchedEvents) => {
@@ -154,6 +154,7 @@ const App = () => {
               <NotionConnect
                 onSuccess={handleEventSuccess}
                 isDark={isDark}
+                selectedPrompt={selectedPrompt} // Pass the selected prompt
               />
             )}
             
