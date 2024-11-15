@@ -1,0 +1,17 @@
+@import 'react-quill/dist/quill.snow.css';
+
+/* Optional: Custom styles for the editor */
+.quill {
+  height: 100%;
+}
+
+.ql-container {
+  height: calc(100% - 42px) !important;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.ql-toolbar {
+  border-top-left-radius: 0.5rem;
+  border-top-right-radius: 0.5rem;
+}
