@@ -17,6 +17,7 @@ const prompt = {
     - If multiple events share a date, group them together in the same array under the 'event' key.
     - If no specific date is mentioned, leave the date key blank and do not include it in the final output.
     - Each event should have a 'description' and a 'details' field (if any).
+    - Remove all trailing commas after properties or array elements.
     - Ensure all curly braces, commas, and other JSON syntax are correctly formatted with no extra commas at the end of arrays or objects.`,
    
     prompt2: `Given a block of text, extract and output the following information strictly in JSON format:
