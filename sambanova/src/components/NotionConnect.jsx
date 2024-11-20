@@ -2,7 +2,36 @@ import React, { useState } from 'react';
 import { Link, ArrowRight, Loader2, BookOpen, AlertCircle } from 'lucide-react';
 import { generateChatCompletion } from '../api/chatCompletions';
 
-const NotionConnect = ({ initialUrl = '', onSuccess }) => {
+function extractJsonFromString(inputStr) {
+  // Find the first opening bracket and the last closing bracket
+  let startIdx = -1;
+  let endIdx = -1;
+
+  // Loop through the string to find the first opening bracket
+  for (let i = 0; i < inputStr.length; i++) {
+      if (inputStr[i] === '{' || inputStr[i] === '[') {
+          startIdx = i;
+          break;
+      }
+  }
+
+  // Loop through the string to find the last closing bracket
+  for (let i = inputStr.length - 1; i >= 0; i--) {
+      if (inputStr[i] === '}' || inputStr[i] === ']') {
+          endIdx = i;
+          break;
+      }
+  }
+
+  // If both start and end brackets are found, extract the JSON part
+  if (startIdx !== -1 && endIdx !== -1 && startIdx <= endIdx) {
+      return inputStr.slice(startIdx, endIdx + 1);  // Include the closing bracket
+  } else {
+      return null;  // Return null if no valid JSON-like structure is found
+  }
+}
+
+const NotionConnect = ({ initialUrl = '', selectedPrompt, onSuccess }) => {
   const [notionUrl, setNotionUrl] = useState(initialUrl);
   const [isUrlValid, setIsUrlValid] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -66,10 +95,10 @@ const NotionConnect = ({ initialUrl = '', onSuccess }) => {
               { role: "user", content: pageText }
             ];
   
-            const apiResponse = await generateChatCompletion(messages);
+            const apiResponse = await generateChatCompletion(messages, selectedPrompt);
             const responseContent = apiResponse.choices[0].message.content;
-            
-            const formattedEvents = formatEventsData(responseContent);
+            const parsedResponseContent = extractJsonFromString(responseContent)
+            const formattedEvents = formatEventsData(parsedResponseContent);
             
             if (formattedEvents.length === 0) {
               throw new Error('No events found in the response');
@@ -80,6 +109,7 @@ const NotionConnect = ({ initialUrl = '', onSuccess }) => {
           } catch (error) {
             console.error('Error:', error);
             setError(error.message);
+          } finally {
             setLoading(false);
           }
         }
